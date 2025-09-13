@@ -1,0 +1,4 @@
+Starting containers with docker compose...
+ Container redis_container  Starting
+Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint redis_container (0d6c32b6cfa6485345858f54905b304d09bb03cb1dc69f78ff2e83e78d21c7cc): Bind for 0.0.0.0:6379 failed: port is already allocated
+Error: Neither 'docker compose' nor 'docker-compose' command is available

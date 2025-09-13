@@ -1,0 +1,24 @@
+ ⚠ Warning: Found multiple lockfiles. Selecting /Users/ashokcse/pnpm-lock.yaml.
+   Consider removing the lockfiles at:
+   * /Users/ashokcse/Downloads/cal.com-main/yarn.lock
+
+   ▲ Next.js 15.4.6
+   - Local:        http://localhost:3003
+   - Network:      http://192.168.1.5:3003
+   - Environments: .env
+
+ ✓ Starting...
+ ○ Compiling /instrumentation ...
+ ✓ Compiled /instrumentation in 3.3s (1148 modules)
+ ✓ Ready in 5.6s
+ ✓ Compiled /api in 392ms (1043 modules)
+ GET / 200 in 454ms
+ GET / 200 in 250ms
+ GET / 200 in 84ms
+Failed to proxy http://localhost:5555/health [AggregateError: ] { code: 'ECONNREFUSED' }
+[AggregateError: ] { code: 'ECONNREFUSED' }
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 1912ms (1300 modules)
+ GET / 200 in 1162ms
+ GET /favicon.ico 404 in 1155ms
+[?25h

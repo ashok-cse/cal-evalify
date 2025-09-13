@@ -1,0 +1,88 @@
+# syntax = docker/dockerfile:1
+
+# Adjust NODE_VERSION as desired
+ARG NODE_VERSION=20.7.0
+FROM node:${NODE_VERSION}-slim AS base
+
+# Cal.com API v1 lives here
+WORKDIR /app
+
+# Set production environment
+ENV NODE_ENV="production"
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
+# Install packages needed to build node modules
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    openssl \
+    pkg-config \
+    python-is-python3 \
+    curl \
+    git \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Build stage
+FROM base AS build
+
+# Copy package files and yarn configuration
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY .yarn ./.yarn
+
+# Copy necessary config files
+COPY turbo.json ./
+COPY i18n.json ./
+COPY i18n.lock ./
+
+# Copy workspace structure for dependency resolution
+COPY apps/ ./apps/
+COPY packages/ ./packages/
+
+# Install dependencies with proper Yarn 3 configuration
+RUN yarn config set httpTimeout 1200000 && \
+    yarn config set enableGlobalCache false && \
+    yarn config set enableTelemetry false && \
+    yarn install --inline-builds
+
+# Build arguments for database
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
+
+# Build Prisma client
+RUN yarn prisma generate
+
+# Build API v1 (exclude test files from build)
+RUN rm -rf apps/api/v1/test
+RUN find apps/api -name "*.test.*" -type f -delete
+RUN find apps/api -name "*.spec.*" -type f -delete
+RUN find . -name "__tests__" -type d -exec rm -rf {} + 2>/dev/null || true
+RUN yarn workspace @calcom/api build
+
+# Production stage
+FROM base AS production
+
+# Copy built application
+COPY --from=build /app .
+
+# Create non-root user
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 --gid nodejs nextjs
+
+# Change ownership of the app directory
+RUN chown -R nextjs:nodejs /app
+USER nextjs
+
+# Expose port
+EXPOSE 3003
+
+# Set environment variables
+ENV PORT=3003
+ENV NODE_ENV=production
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3003 || exit 1
+
+# Start the API v1 server
+CMD ["yarn", "workspace", "@calcom/api", "start"]

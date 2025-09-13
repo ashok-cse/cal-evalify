@@ -1,0 +1,245 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: calcom-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-unicorn_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-magical_password}
+      POSTGRES_DB: ${POSTGRES_DB:-calendso}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-unicorn_user} -d ${POSTGRES_DB:-calendso}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - calcom-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: calcom-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:-}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - calcom-network
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: calcom-web
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-unicorn_user}:${POSTGRES_PASSWORD:-magical_password}@postgres:5432/${POSTGRES_DB:-calendso}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_WEBAPP_URL=${NEXT_PUBLIC_WEBAPP_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_WEBSITE_URL=${NEXT_PUBLIC_WEBSITE_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_API_V2_URL=${NEXT_PUBLIC_API_V2_URL:-http://localhost:3004/v2}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-}@redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - NEXT_PUBLIC_VAPID_PUBLIC_KEY=${NEXT_PUBLIC_VAPID_PUBLIC_KEY}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
+      - NEXT_PUBLIC_IS_E2E=${NEXT_PUBLIC_IS_E2E:-1}
+      - CALCOM_TELEMETRY_DISABLED=${CALCOM_TELEMETRY_DISABLED:-1}
+      - EMAIL_FROM=${EMAIL_FROM:-noreply@localhost}
+      - EMAIL_SERVER_HOST=${EMAIL_SERVER_HOST:-}
+      - EMAIL_SERVER_PORT=${EMAIL_SERVER_PORT:-587}
+      - EMAIL_SERVER_USER=${EMAIL_SERVER_USER:-}
+      - EMAIL_SERVER_PASSWORD=${EMAIL_SERVER_PASSWORD:-}
+      - CRON_API_KEY=${CRON_API_KEY:-}
+      - CALENDSO_ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - MS_GRAPH_CLIENT_ID=${MS_GRAPH_CLIENT_ID:-}
+      - MS_GRAPH_CLIENT_SECRET=${MS_GRAPH_CLIENT_SECRET:-}
+      - ZOOM_CLIENT_ID=${ZOOM_CLIENT_ID:-}
+      - ZOOM_CLIENT_SECRET=${ZOOM_CLIENT_SECRET:-}
+      - GOOGLE_API_CREDENTIALS=${GOOGLE_API_CREDENTIALS:-}
+      - GOOGLE_LOGIN_ENABLED=${GOOGLE_LOGIN_ENABLED:-true}
+      - SAML_DATABASE_URL=${SAML_DATABASE_URL:-}
+      - SAML_ADMINS=${SAML_ADMINS:-}
+      - NEXTAUTH_COOKIE_DOMAIN=${NEXTAUTH_COOKIE_DOMAIN:-}
+      - ORGANIZATIONS_ENABLED=${ORGANIZATIONS_ENABLED:-false}
+      - STRIPE_CLIENT_ID=${STRIPE_CLIENT_ID:-}
+      - STRIPE_PRIVATE_KEY=${STRIPE_PRIVATE_KEY:-}
+      - PAYMENT_FEE_PERCENTAGE=${PAYMENT_FEE_PERCENTAGE:-0.005}
+      - PAYMENT_FEE_FIXED=${PAYMENT_FEE_FIXED:-10}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
+      - TWILIO_SID=${TWILIO_SID:-}
+      - TWILIO_TOKEN=${TWILIO_TOKEN:-}
+      - TWILIO_MESSAGING_SID=${TWILIO_MESSAGING_SID:-}
+      - DAILY_API_KEY=${DAILY_API_KEY:-}
+      - DAILY_SCALE_PLAN=${DAILY_SCALE_PLAN:-}
+      - HUBSPOT_CLIENT_ID=${HUBSPOT_CLIENT_ID:-}
+      - HUBSPOT_CLIENT_SECRET=${HUBSPOT_CLIENT_SECRET:-}
+      - ZOOM_CLIENT_ID=${ZOOM_CLIENT_ID:-}
+      - ZOOM_CLIENT_SECRET=${ZOOM_CLIENT_SECRET:-}
+      - SALESFORCE_CONSUMER_KEY=${SALESFORCE_CONSUMER_KEY:-}
+      - SALESFORCE_CONSUMER_SECRET=${SALESFORCE_CONSUMER_SECRET:-}
+      - GIPHY_API_KEY=${GIPHY_API_KEY:-}
+      - VITAL_API_KEY=${VITAL_API_KEY:-}
+      - VITAL_WEBHOOK_SECRET=${VITAL_WEBHOOK_SECRET:-}
+      - CLOSECOM_API_KEY=${CLOSECOM_API_KEY:-}
+      - SENDGRID_SYNC_API_KEY=${SENDGRID_SYNC_API_KEY:-}
+      - CSP_POLICY=${CSP_POLICY:-}
+      - ALLOWED_HOSTNAMES=${ALLOWED_HOSTNAMES:-}
+      - RESERVED_SUBDOMAINS=${RESERVED_SUBDOMAINS:-}
+      - WEBSITE_BASE_URL=${WEBSITE_BASE_URL:-}
+      - CONSOLE_URL=${CONSOLE_URL:-}
+      - APP_ROUTER_APPS_CATEGORIES_ENABLED=${APP_ROUTER_APPS_CATEGORIES_ENABLED:-}
+      - APP_ROUTER_APPS_INSTALLED_CATEGORY_ENABLED=${APP_ROUTER_APPS_INSTALLED_CATEGORY_ENABLED:-}
+      - APP_ROUTER_APPS_SLUG_ENABLED=${APP_ROUTER_APPS_SLUG_ENABLED:-}
+      - APP_ROUTER_APPS_SLUG_SETUP_ENABLED=${APP_ROUTER_APPS_SLUG_SETUP_ENABLED:-}
+      - APP_ROUTER_BOOKINGS_STATUS_ENABLED=${APP_ROUTER_BOOKINGS_STATUS_ENABLED:-}
+      - APP_ROUTER_SETTINGS_ADMIN_ENABLED=${APP_ROUTER_SETTINGS_ADMIN_ENABLED:-}
+      - FEATURE_FLAG_WEBHOOK_ENABLED=${FEATURE_FLAG_WEBHOOK_ENABLED:-}
+      - AB_TEST_BUCKET_PROBABILITY=${AB_TEST_BUCKET_PROBABILITY:-}
+      - ORGANIZATIONS_AUTOLINK=${ORGANIZATIONS_AUTOLINK:-}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - calcom-network
+
+  api-v1:
+    build:
+      context: .
+      dockerfile: Dockerfile.api-v1
+    container_name: calcom-api-v1
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-unicorn_user}:${POSTGRES_PASSWORD:-magical_password}@postgres:5432/${POSTGRES_DB:-calendso}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - API_KEY_PREFIX=${API_KEY_PREFIX:-cal_}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_WEBAPP_URL=${NEXT_PUBLIC_WEBAPP_URL:-http://localhost:3000}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-}@redis:6379
+      - CALCOM_TELEMETRY_DISABLED=${CALCOM_TELEMETRY_DISABLED:-1}
+      - EMAIL_FROM=${EMAIL_FROM:-noreply@localhost}
+      - CRON_API_KEY=${CRON_API_KEY:-}
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3003/api/docs || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - calcom-network
+
+  api-v2:
+    build:
+      context: .
+      dockerfile: apps/api/v2/Dockerfile
+    container_name: calcom-api-v2
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-unicorn_user}:${POSTGRES_PASSWORD:-magical_password}@postgres:5432/${POSTGRES_DB:-calendso}
+      - DATABASE_DIRECT_URL=postgresql://${POSTGRES_USER:-unicorn_user}:${POSTGRES_PASSWORD:-magical_password}@postgres:5432/${POSTGRES_DB:-calendso}
+      - DATABASE_READ_URL=postgresql://${POSTGRES_USER:-unicorn_user}:${POSTGRES_PASSWORD:-magical_password}@postgres:5432/${POSTGRES_DB:-calendso}
+      - DATABASE_WRITE_URL=postgresql://${POSTGRES_USER:-unicorn_user}:${POSTGRES_PASSWORD:-magical_password}@postgres:5432/${POSTGRES_DB:-calendso}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - API_KEY_PREFIX=${API_KEY_PREFIX:-cal_}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_WEBAPP_URL=${NEXT_PUBLIC_WEBAPP_URL:-http://localhost:3000}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-}@redis:6379
+      - CALCOM_TELEMETRY_DISABLED=${CALCOM_TELEMETRY_DISABLED:-1}
+      - EMAIL_FROM=${EMAIL_FROM:-noreply@localhost}
+      - CRON_API_KEY=${CRON_API_KEY:-}
+      - PLATFORM_API_KEYS=${PLATFORM_API_KEYS:-}
+      - PLATFORM_CLIENT_ID=${PLATFORM_CLIENT_ID:-}
+      - PLATFORM_CLIENT_SECRET=${PLATFORM_CLIENT_SECRET:-}
+      - CALCOM_LICENSE_KEY=${CALCOM_LICENSE_KEY:-development}
+      - NEXT_PUBLIC_IS_E2E=${NEXT_PUBLIC_IS_E2E:-1}
+      - CALCOM_TELEMETRY_DISABLED=1
+      - DISABLE_LICENSE_CHECK=true
+      - IS_CALCOM_DOCKER=true
+      - SKIP_LICENSE_CHECK=true
+      - DEPLOYMENTS_URL=""
+      - CALCOM_ENV=development
+      - CALENDSO_ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    ports:
+      - "3004:3004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3004/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - calcom-network
+
+  api-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile.api-proxy
+    container_name: calcom-api-proxy
+    environment:
+      - NODE_ENV=production
+      - API_V1_URL=http://api-v1:3003
+      - API_V2_URL=http://api-v2:3004
+    ports:
+      - "3002:3002"
+    depends_on:
+      - api-v1
+      - api-v2
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3002/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - calcom-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  calcom-network:
+    driver: bridge
+

@@ -1,0 +1,117 @@
+# syntax = docker/dockerfile:1
+
+# Adjust NODE_VERSION as desired
+ARG NODE_VERSION=20.7.0
+FROM node:${NODE_VERSION}-slim AS base
+
+# Cal.com app lives here
+WORKDIR /app
+
+# Set production environment
+ENV NODE_ENV="production"
+ENV NODE_OPTIONS="--max-old-space-size=8192"
+
+# Install packages needed to build node modules and for deployment
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    openssl \
+    pkg-config \
+    python-is-python3 \
+    curl \
+    git \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Build stage
+FROM base AS build
+
+# Copy package files and yarn configuration
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY .yarn ./.yarn
+
+# Copy necessary config files
+COPY turbo.json ./
+COPY i18n.json ./
+COPY i18n.lock ./
+COPY vitest.config.ts ./
+COPY vitest.workspace.ts ./
+
+# Copy workspace structure for dependency resolution
+COPY apps/ ./apps/
+COPY packages/ ./packages/
+
+# Install dependencies with proper Yarn 3 configuration
+RUN yarn config set httpTimeout 1200000 && \
+    yarn config set enableGlobalCache false && \
+    yarn config set enableTelemetry false && \
+    yarn install --inline-builds
+
+# Build arguments for database and auth
+ARG DATABASE_URL=postgresql://calcom:calcom123@postgres:5432/calcom
+ARG DATABASE_DIRECT_URL=postgresql://calcom:calcom123@postgres:5432/calcom
+ARG NEXTAUTH_SECRET=cal-docker-secret
+ARG NEXTAUTH_URL=http://localhost:3000
+ARG CALENDSO_ENCRYPTION_KEY=cal-docker-encryption-key
+ARG CRON_API_KEY=cal-docker-cron-key
+ARG EMAIL_FROM=noreply@localhost
+ARG NEXT_PUBLIC_WEBAPP_URL=http://localhost:3000
+
+ENV DATABASE_URL=$DATABASE_URL
+ENV DATABASE_DIRECT_URL=$DATABASE_DIRECT_URL
+ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
+ENV NEXTAUTH_URL=$NEXTAUTH_URL
+ENV CALENDSO_ENCRYPTION_KEY=$CALENDSO_ENCRYPTION_KEY
+ENV CRON_API_KEY=$CRON_API_KEY
+ENV EMAIL_FROM=$EMAIL_FROM
+ENV NEXT_PUBLIC_WEBAPP_URL=$NEXT_PUBLIC_WEBAPP_URL
+
+# Generate Prisma client and build the application
+# Exclude test files from TypeScript compilation during build
+RUN yarn prisma generate && \
+    NEXT_BUILD_EXCLUDE_TEST_FILES=true yarn turbo run build --filter=@calcom/web
+
+# Production stage
+FROM base AS production
+
+# Create a non-root user
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 --gid 1001 nextjs
+
+# Copy built application from build stage
+COPY --from=build --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=build --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=build --chown=nextjs:nodejs /app/yarn.lock ./yarn.lock
+COPY --from=build --chown=nextjs:nodejs /app/turbo.json ./turbo.json
+COPY --from=build --chown=nextjs:nodejs /app/i18n.json ./i18n.json
+COPY --from=build --chown=nextjs:nodejs /app/i18n.lock ./i18n.lock
+COPY --from=build --chown=nextjs:nodejs /app/.yarn ./.yarn
+COPY --from=build --chown=nextjs:nodejs /app/.yarnrc.yml ./.yarnrc.yml
+
+# Copy built packages
+COPY --from=build --chown=nextjs:nodejs /app/packages ./packages
+
+# Copy built apps
+COPY --from=build --chown=nextjs:nodejs /app/apps/web/.next ./apps/web/.next
+COPY --from=build --chown=nextjs:nodejs /app/apps/web/package.json ./apps/web/package.json
+COPY --from=build --chown=nextjs:nodejs /app/apps/web/next.config.js ./apps/web/next.config.js
+COPY --from=build --chown=nextjs:nodejs /app/apps/web/next-i18next.config.js ./apps/web/next-i18next.config.js
+COPY --from=build --chown=nextjs:nodejs /app/apps/web/pagesAndRewritePaths.js ./apps/web/pagesAndRewritePaths.js
+COPY --from=build --chown=nextjs:nodejs /app/apps/web/getNextjsOrgRewriteConfig.js ./apps/web/getNextjsOrgRewriteConfig.js
+COPY --from=build --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
+
+# Switch to non-root user
+USER nextjs
+
+# Set working directory to web app
+WORKDIR /app/apps/web
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3000/api/health || exit 1
+
+# Start the server
+CMD ["yarn", "start"]

@@ -1,0 +1,35 @@
+# syntax = docker/dockerfile:1
+
+ARG NODE_VERSION=20.7.0
+FROM node:${NODE_VERSION}-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    openssl && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Copy package files
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY .yarn ./.yarn
+
+# Copy prisma schema
+COPY packages/prisma ./packages/prisma
+
+# Install dependencies
+RUN yarn install --immutable
+
+# Build argument for database
+ARG DATABASE_URL
+ENV DATABASE_URL=$DATABASE_URL
+
+# Generate Prisma client
+RUN yarn prisma generate
+
+# Expose port for Prisma Studio
+EXPOSE 5555
+
+# Start Prisma Studio
+CMD ["yarn", "prisma", "studio", "--hostname", "0.0.0.0", "--port", "5555"]
