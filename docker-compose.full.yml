@@ -42,13 +42,17 @@ services:
       dockerfile: Dockerfile.web
       args:
         - NODE_OPTIONS=--max-old-space-size=4096
+        - BUILDKIT_STEP_LOG_MAX_SIZE=50000000
+        - BUILDKIT_STEP_LOG_MAX_SPEED=100000
     container_name: calcom-web
     deploy:
       resources:
         limits:
-          memory: 6G
+          memory: 8G
+          cpus: '4'
         reservations:
-          memory: 2G
+          memory: 3G
+          cpus: '2'
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://${POSTGRES_USER:-unicorn_user}:${POSTGRES_PASSWORD:-magical_password}@postgres:5432/${POSTGRES_DB:-calendso}
@@ -139,13 +143,16 @@ services:
       dockerfile: Dockerfile.api-v1
       args:
         - NODE_OPTIONS=--max-old-space-size=2048
+        - BUILDKIT_STEP_LOG_MAX_SIZE=50000000
     container_name: calcom-api-v1
     deploy:
       resources:
         limits:
-          memory: 3G
+          memory: 4G
+          cpus: '2'
         reservations:
           memory: 1G
+          cpus: '1'
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://${POSTGRES_USER:-unicorn_user}:${POSTGRES_PASSWORD:-magical_password}@postgres:5432/${POSTGRES_DB:-calendso}
@@ -182,13 +189,16 @@ services:
       dockerfile: apps/api/v2/Dockerfile
       args:
         - NODE_OPTIONS=--max-old-space-size=2048
+        - BUILDKIT_STEP_LOG_MAX_SIZE=50000000
     container_name: calcom-api-v2
     deploy:
       resources:
         limits:
-          memory: 3G
+          memory: 4G
+          cpus: '2'
         reservations:
           memory: 1G
+          cpus: '1'
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://${POSTGRES_USER:-unicorn_user}:${POSTGRES_PASSWORD:-magical_password}@postgres:5432/${POSTGRES_DB:-calendso}
