@@ -49,14 +49,13 @@ RUN yarn config set httpTimeout 1800000 && \
     yarn config set enableProgressBars false && \
     yarn config set logFilters --json '[{"code":"YN0002","level":"discard"},{"code":"YN0013","level":"discard"}]' && \
     yarn config set nmMode hardlinks-local && \
-    YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install --inline-builds --mode skip-build
+    YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install --inline-builds
 
-# Run post-install scripts with reduced memory footprint
-RUN NODE_OPTIONS="--max-old-space-size=1024" yarn run post-install || true
-
-# Build arguments for database
+# Build arguments for database and API v2
 ARG DATABASE_URL
+ARG NEXT_PUBLIC_API_V2_ROOT_URL=http://localhost:3004
 ENV DATABASE_URL=${DATABASE_URL}
+ENV NEXT_PUBLIC_API_V2_ROOT_URL=${NEXT_PUBLIC_API_V2_ROOT_URL}
 
 # Build Prisma client
 RUN yarn prisma generate

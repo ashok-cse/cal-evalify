@@ -144,6 +144,7 @@ services:
       args:
         - NODE_OPTIONS=--max-old-space-size=2048
         - BUILDKIT_STEP_LOG_MAX_SIZE=50000000
+        - NEXT_PUBLIC_API_V2_ROOT_URL=http://api-v2:3004
     container_name: calcom-api-v1
     deploy:
       resources:
@@ -162,6 +163,7 @@ services:
       - API_KEY_PREFIX=${API_KEY_PREFIX:-cal_}
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
       - NEXT_PUBLIC_WEBAPP_URL=${NEXT_PUBLIC_WEBAPP_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_API_V2_ROOT_URL=${NEXT_PUBLIC_API_V2_ROOT_URL:-http://api-v2:3004}
       - REDIS_URL=redis://:${REDIS_PASSWORD:-}@redis:6379
       - CALCOM_TELEMETRY_DISABLED=${CALCOM_TELEMETRY_DISABLED:-1}
       - EMAIL_FROM=${EMAIL_FROM:-noreply@localhost}

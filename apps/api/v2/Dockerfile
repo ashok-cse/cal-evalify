@@ -25,10 +25,7 @@ RUN yarn config set httpTimeout 1800000 && \
     yarn config set enableProgressBars false && \
     yarn config set logFilters --json '[{"code":"YN0002","level":"discard"},{"code":"YN0013","level":"discard"}]' && \
     yarn config set nmMode hardlinks-local && \
-    YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install --mode skip-build
-
-# Run post-install scripts with reduced memory footprint
-RUN NODE_OPTIONS="--max-old-space-size=1024" yarn run post-install || true
+    YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install --inline-builds
 
 # Build prisma schema and make sure that it is linked to v2 node_modules
 RUN yarn workspace @calcom/api-v2 run generate-schemas

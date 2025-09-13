@@ -54,6 +54,7 @@ CRON_API_KEY=cal-docker-cron-key-generated
 NEXT_PUBLIC_WEBAPP_URL=http://localhost:3000
 NEXT_PUBLIC_WEBSITE_URL=http://localhost:3000
 NEXT_PUBLIC_API_V2_URL=http://localhost:3004/v2
+NEXT_PUBLIC_API_V2_ROOT_URL=http://localhost:3004
 EMAIL_FROM=noreply@localhost
 API_KEY_PREFIX=cal_
 NEXT_PUBLIC_IS_E2E=1
