@@ -1,20 +1,20 @@
 # syntax = docker/dockerfile:1
 
-# Adjust NODE_VERSION as desired
+# Minimal Cal.com Web build for resource-constrained environments
 ARG NODE_VERSION=20.7.0
 FROM node:${NODE_VERSION}-slim AS base
 
 # Cal.com app lives here
 WORKDIR /app
 
-# Set production environment
+# Set production environment with aggressive memory limits
 ENV NODE_ENV="production"
-ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV NODE_OPTIONS="--max-old-space-size=2048 --gc-interval=100"
 ENV TURBO_TELEMETRY_DISABLED=1
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DO_NOT_TRACK=1
 
-# Install packages needed to build node modules and for deployment
+# Install minimal packages needed
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
     build-essential \
@@ -44,18 +44,17 @@ COPY vitest.workspace.ts ./
 COPY apps/ ./apps/
 COPY packages/ ./packages/
 
-# Install dependencies with proper Yarn 3 configuration and optimizations
-# Disable automatic post-install scripts to prevent memory exhaustion
+# Ultra-conservative yarn installation - skip all scripts initially
 RUN yarn config set httpTimeout 1800000 && \
     yarn config set enableGlobalCache false && \
     yarn config set enableTelemetry false && \
     yarn config set enableProgressBars false && \
     yarn config set logFilters --json '[{"code":"YN0002","level":"discard"},{"code":"YN0013","level":"discard"}]' && \
     yarn config set nmMode hardlinks-local && \
-    YARN_ENABLE_IMMUTABLE_INSTALLS=false SKIP_POSTINSTALL=1 yarn install --ignore-scripts
+    YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install --ignore-scripts --frozen-lockfile
 
-# Run essential post-install scripts manually with memory constraints
-RUN NODE_OPTIONS="--max-old-space-size=2048" yarn run turbo run post-install --concurrency=1 || echo "Post-install completed with warnings"
+# Only run absolutely essential post-install scripts with strict limits
+RUN NODE_OPTIONS="--max-old-space-size=1536" yarn workspace @calcom/prisma run postinstall || true
 
 # Build arguments for database and auth
 ARG DATABASE_URL=postgresql://calcom:calcom123@postgres:5432/calcom
@@ -76,10 +75,11 @@ ENV CRON_API_KEY=$CRON_API_KEY
 ENV EMAIL_FROM=$EMAIL_FROM
 ENV NEXT_PUBLIC_WEBAPP_URL=$NEXT_PUBLIC_WEBAPP_URL
 
-# Generate Prisma client and build the application
-# Exclude test files from TypeScript compilation during build
-RUN yarn prisma generate && \
-    NEXT_BUILD_EXCLUDE_TEST_FILES=true yarn turbo run build --filter=@calcom/web
+# Generate Prisma client with minimal memory
+RUN NODE_OPTIONS="--max-old-space-size=1536" yarn prisma generate
+
+# Build the application with strict memory limits and reduced parallelism
+RUN NODE_OPTIONS="--max-old-space-size=2048" NEXT_BUILD_EXCLUDE_TEST_FILES=true yarn turbo run build --filter=@calcom/web --concurrency=1
 
 # Production stage
 FROM base AS production
