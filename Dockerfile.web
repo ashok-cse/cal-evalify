@@ -43,12 +43,11 @@ COPY packages/ ./packages/
 
 # Install dependencies with proper Yarn 3 configuration and optimizations
 RUN yarn config set httpTimeout 1800000 && \
-    yarn config set networkTimeout 1800000 && \
     yarn config set enableGlobalCache false && \
     yarn config set enableTelemetry false && \
     yarn config set enableProgressBars false && \
     yarn config set logFilters --json '[{"code":"YN0002","level":"discard"},{"code":"YN0013","level":"discard"}]' && \
-    yarn install --inline-builds --network-timeout 1800000
+    yarn install --inline-builds
 
 # Build arguments for database and auth
 ARG DATABASE_URL=postgresql://calcom:calcom123@postgres:5432/calcom
