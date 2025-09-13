@@ -40,7 +40,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.web
+      args:
+        - NODE_OPTIONS=--max-old-space-size=4096
     container_name: calcom-web
+    deploy:
+      resources:
+        limits:
+          memory: 6G
+        reservations:
+          memory: 2G
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://${POSTGRES_USER:-unicorn_user}:${POSTGRES_PASSWORD:-magical_password}@postgres:5432/${POSTGRES_DB:-calendso}
@@ -129,7 +137,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.api-v1
+      args:
+        - NODE_OPTIONS=--max-old-space-size=2048
     container_name: calcom-api-v1
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+        reservations:
+          memory: 1G
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://${POSTGRES_USER:-unicorn_user}:${POSTGRES_PASSWORD:-magical_password}@postgres:5432/${POSTGRES_DB:-calendso}
@@ -164,7 +180,15 @@ services:
     build:
       context: .
       dockerfile: apps/api/v2/Dockerfile
+      args:
+        - NODE_OPTIONS=--max-old-space-size=2048
     container_name: calcom-api-v2
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+        reservations:
+          memory: 1G
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://${POSTGRES_USER:-unicorn_user}:${POSTGRES_PASSWORD:-magical_password}@postgres:5432/${POSTGRES_DB:-calendso}

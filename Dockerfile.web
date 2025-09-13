@@ -9,7 +9,7 @@ WORKDIR /app
 
 # Set production environment
 ENV NODE_ENV="production"
-ENV NODE_OPTIONS="--max-old-space-size=8192"
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 # Install packages needed to build node modules and for deployment
 RUN apt-get update -qq && \
@@ -41,11 +41,14 @@ COPY vitest.workspace.ts ./
 COPY apps/ ./apps/
 COPY packages/ ./packages/
 
-# Install dependencies with proper Yarn 3 configuration
-RUN yarn config set httpTimeout 1200000 && \
+# Install dependencies with proper Yarn 3 configuration and optimizations
+RUN yarn config set httpTimeout 1800000 && \
+    yarn config set networkTimeout 1800000 && \
     yarn config set enableGlobalCache false && \
     yarn config set enableTelemetry false && \
-    yarn install --inline-builds
+    yarn config set enableProgressBars false && \
+    yarn config set logFilters --json '[{"code":"YN0002","level":"discard"},{"code":"YN0013","level":"discard"}]' && \
+    yarn install --inline-builds --network-timeout 1800000
 
 # Build arguments for database and auth
 ARG DATABASE_URL=postgresql://calcom:calcom123@postgres:5432/calcom
