@@ -58,11 +58,11 @@ RUN yarn config set httpTimeout 1800000 && \
 ARG DATABASE_URL=postgresql://calcom:calcom123@postgres:5432/calcom
 ARG DATABASE_DIRECT_URL=postgresql://calcom:calcom123@postgres:5432/calcom
 ARG NEXTAUTH_SECRET=cal-docker-secret
-ARG NEXTAUTH_URL=http://localhost:3000
+ARG NEXTAUTH_URL=http://localhost:3001
 ARG CALENDSO_ENCRYPTION_KEY=cal-docker-encryption-key
 ARG CRON_API_KEY=cal-docker-cron-key
 ARG EMAIL_FROM=noreply@localhost
-ARG NEXT_PUBLIC_WEBAPP_URL=http://localhost:3000
+ARG NEXT_PUBLIC_WEBAPP_URL=http://localhost:3001
 
 ENV DATABASE_URL=$DATABASE_URL
 ENV DATABASE_DIRECT_URL=$DATABASE_DIRECT_URL

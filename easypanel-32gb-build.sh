@@ -50,15 +50,15 @@ REDIS_PASSWORD=
 
 # Authentication & Security
 NEXTAUTH_SECRET=cal-highperf-secret-32gb-$(openssl rand -hex 32)
-NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_URL=http://localhost:3001
 ENCRYPTION_KEY=cal-highperf-encryption-32gb-$(openssl rand -hex 32)
 JWT_SECRET=cal-highperf-jwt-32gb-$(openssl rand -hex 32)
 CALENDSO_ENCRYPTION_KEY=cal-highperf-calendso-32gb-$(openssl rand -hex 32)
 CRON_API_KEY=cal-highperf-cron-32gb-$(openssl rand -hex 32)
 
 # Application URLs
-NEXT_PUBLIC_WEBAPP_URL=http://localhost:3000
-NEXT_PUBLIC_WEBSITE_URL=http://localhost:3000
+NEXT_PUBLIC_WEBAPP_URL=http://localhost:3001
+NEXT_PUBLIC_WEBSITE_URL=http://localhost:3001
 NEXT_PUBLIC_API_V2_URL=http://localhost:3004/v2
 NEXT_PUBLIC_API_V2_ROOT_URL=http://localhost:3004
 EMAIL_FROM=noreply@localhost
@@ -109,7 +109,7 @@ sleep 45
 echo "🎉 HIGH-PERFORMANCE Cal.com deployment completed!"
 echo ""
 echo "📍 Your Cal.com is now running at full capacity:"
-echo "   • Web interface: http://localhost:3000"
+echo "   • Web interface: http://localhost:3001"
 echo "   • API v1: http://localhost:3003"
 echo "   • API v2: http://localhost:3004"
 echo "   • API Proxy: http://localhost:3002"
