@@ -54,13 +54,15 @@ RUN yarn config set httpTimeout 1800000 && \
     yarn config set nmMode hardlinks-local && \
     YARN_ENABLE_IMMUTABLE_INSTALLS=false NODE_OPTIONS="--max-old-space-size=8192" yarn install --inline-builds
 
-# Build arguments for database and auth
+# Build arguments for database and auth with secure defaults
 ARG DATABASE_URL=postgresql://calcom:calcom123@postgres:5432/calcom
 ARG DATABASE_DIRECT_URL=postgresql://calcom:calcom123@postgres:5432/calcom
-ARG NEXTAUTH_SECRET=cal-docker-secret
+ARG NEXTAUTH_SECRET=cal-easypanel-32gb-nextauth-secret-12345678901234567890123456789012
 ARG NEXTAUTH_URL=http://localhost:3001
-ARG CALENDSO_ENCRYPTION_KEY=cal-docker-encryption-key
-ARG CRON_API_KEY=cal-docker-cron-key
+ARG CALENDSO_ENCRYPTION_KEY=cal-easypanel-32gb-calendso-key-12345678901234567890123456789012
+ARG ENCRYPTION_KEY=cal-easypanel-32gb-encryption-key-12345678901234567890123456789012
+ARG JWT_SECRET=cal-easypanel-32gb-jwt-secret-key-12345678901234567890123456789012
+ARG CRON_API_KEY=cal-easypanel-32gb-cron-api-key-12345678901234567890123456789012
 ARG EMAIL_FROM=noreply@localhost
 ARG NEXT_PUBLIC_WEBAPP_URL=http://localhost:3001
 
@@ -69,9 +71,21 @@ ENV DATABASE_DIRECT_URL=$DATABASE_DIRECT_URL
 ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
 ENV NEXTAUTH_URL=$NEXTAUTH_URL
 ENV CALENDSO_ENCRYPTION_KEY=$CALENDSO_ENCRYPTION_KEY
+ENV ENCRYPTION_KEY=$ENCRYPTION_KEY
+ENV JWT_SECRET=$JWT_SECRET
 ENV CRON_API_KEY=$CRON_API_KEY
 ENV EMAIL_FROM=$EMAIL_FROM
 ENV NEXT_PUBLIC_WEBAPP_URL=$NEXT_PUBLIC_WEBAPP_URL
+ENV CALCOM_TELEMETRY_DISABLED=1
+ENV TURBO_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV DO_NOT_TRACK=1
+ENV ORGANIZATIONS_ENABLED=false
+ENV GOOGLE_LOGIN_ENABLED=true
+ENV CALCOM_LICENSE_KEY=development
+ENV DISABLE_LICENSE_CHECK=true
+ENV IS_CALCOM_DOCKER=true
+ENV SKIP_LICENSE_CHECK=true
 
 # Generate Prisma client with high memory allocation
 RUN NODE_OPTIONS="--max-old-space-size=8192" yarn prisma generate
@@ -100,6 +114,10 @@ COPY --from=build --chown=nextjs:nodejs /app/packages ./packages
 # Copy built web application
 COPY --from=build --chown=nextjs:nodejs /app/apps/web ./apps/web
 
+# Copy entrypoint script and make it executable
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh && chown nextjs:nodejs /entrypoint.sh
+
 # Switch to non-root user
 USER nextjs
 
@@ -107,11 +125,14 @@ USER nextjs
 WORKDIR /app/apps/web
 
 # Expose port
-EXPOSE 3001
+EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:3000/api/health || exit 1
+
+# Use entrypoint script to set environment variables
+ENTRYPOINT ["/entrypoint.sh"]
 
 # Start the server
 CMD ["yarn", "start"]
