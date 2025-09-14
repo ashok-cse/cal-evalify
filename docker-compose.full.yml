@@ -22,7 +22,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: calcom-redis
-    command: redis-server --requirepass ${REDIS_PASSWORD:-}
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
     ports:
       - "6379:6379"
     volumes:
@@ -32,6 +32,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 30s
     restart: unless-stopped
     networks:
       - calcom-network
@@ -61,7 +62,7 @@ services:
       - NEXT_PUBLIC_WEBAPP_URL=${NEXT_PUBLIC_WEBAPP_URL:-http://localhost:3000}
       - NEXT_PUBLIC_WEBSITE_URL=${NEXT_PUBLIC_WEBSITE_URL:-http://localhost:3000}
       - NEXT_PUBLIC_API_V2_URL=${NEXT_PUBLIC_API_V2_URL:-http://localhost:3004/v2}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-}@redis:6379
+      - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET}
       - NEXT_PUBLIC_VAPID_PUBLIC_KEY=${NEXT_PUBLIC_VAPID_PUBLIC_KEY}
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
@@ -163,7 +164,7 @@ services:
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
       - NEXT_PUBLIC_WEBAPP_URL=${NEXT_PUBLIC_WEBAPP_URL:-http://localhost:3000}
       - NEXT_PUBLIC_API_V2_ROOT_URL=${NEXT_PUBLIC_API_V2_ROOT_URL:-http://api-v2:3004}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-}@redis:6379
+      - REDIS_URL=redis://redis:6379
       - CALCOM_TELEMETRY_DISABLED=${CALCOM_TELEMETRY_DISABLED:-1}
       - EMAIL_FROM=${EMAIL_FROM:-noreply@localhost}
       - CRON_API_KEY=${CRON_API_KEY:-}
@@ -212,7 +213,7 @@ services:
       - API_KEY_PREFIX=${API_KEY_PREFIX:-cal_}
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
       - NEXT_PUBLIC_WEBAPP_URL=${NEXT_PUBLIC_WEBAPP_URL:-http://localhost:3000}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-}@redis:6379
+      - REDIS_URL=redis://redis:6379
       - CALCOM_TELEMETRY_DISABLED=${CALCOM_TELEMETRY_DISABLED:-1}
       - EMAIL_FROM=${EMAIL_FROM:-noreply@localhost}
       - CRON_API_KEY=${CRON_API_KEY:-}
