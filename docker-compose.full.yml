@@ -40,7 +40,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: Dockerfile.web
+      dockerfile: Dockerfile.web.robust
       args:
         - NODE_OPTIONS=--max-old-space-size=8192
         - BUILDKIT_STEP_LOG_MAX_SIZE=100000000
@@ -122,7 +122,7 @@ services:
       - AB_TEST_BUCKET_PROBABILITY=${AB_TEST_BUCKET_PROBABILITY:-}
       - ORGANIZATIONS_AUTOLINK=${ORGANIZATIONS_AUTOLINK:-}
     ports:
-      - "3001:3000"
+      - "3001:3001"
     depends_on:
       postgres:
         condition: service_healthy
