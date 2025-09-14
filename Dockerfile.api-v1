@@ -7,9 +7,9 @@ FROM node:${NODE_VERSION}-slim AS base
 # Cal.com API v1 lives here
 WORKDIR /app
 
-# Set production environment
+# Set production environment with increased memory for 32GB server
 ENV NODE_ENV="production"
-ENV NODE_OPTIONS="--max-old-space-size=2048"
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 ENV TURBO_TELEMETRY_DISABLED=1
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DO_NOT_TRACK=1
@@ -43,17 +43,14 @@ COPY apps/ ./apps/
 COPY packages/ ./packages/
 
 # Install dependencies with proper Yarn 3 configuration
-# Disable automatic post-install scripts to prevent memory exhaustion
+# With 32GB RAM, we can use standard installation with higher memory limits
 RUN yarn config set httpTimeout 1800000 && \
     yarn config set enableGlobalCache false && \
     yarn config set enableTelemetry false && \
     yarn config set enableProgressBars false && \
     yarn config set logFilters --json '[{"code":"YN0002","level":"discard"},{"code":"YN0013","level":"discard"}]' && \
     yarn config set nmMode hardlinks-local && \
-    YARN_ENABLE_IMMUTABLE_INSTALLS=false SKIP_POSTINSTALL=1 yarn install --ignore-scripts
-
-# Run essential post-install scripts manually with memory constraints
-RUN NODE_OPTIONS="--max-old-space-size=1024" yarn run turbo run post-install --concurrency=1 || echo "Post-install completed with warnings"
+    YARN_ENABLE_IMMUTABLE_INSTALLS=false NODE_OPTIONS="--max-old-space-size=4096" yarn install --inline-builds
 
 # Build arguments for database and API v2
 ARG DATABASE_URL

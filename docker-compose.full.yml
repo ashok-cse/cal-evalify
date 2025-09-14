@@ -41,17 +41,16 @@ services:
       context: .
       dockerfile: Dockerfile.web
       args:
-        - NODE_OPTIONS=--max-old-space-size=4096
-        - BUILDKIT_STEP_LOG_MAX_SIZE=50000000
-        - BUILDKIT_STEP_LOG_MAX_SPEED=100000
+        - NODE_OPTIONS=--max-old-space-size=8192
+        - BUILDKIT_STEP_LOG_MAX_SIZE=100000000
     container_name: calcom-web
     deploy:
       resources:
         limits:
-          memory: 8G
-          cpus: '4'
+          memory: 12G
+          cpus: '6'
         reservations:
-          memory: 3G
+          memory: 4G
           cpus: '2'
     environment:
       - NODE_ENV=production
@@ -142,17 +141,17 @@ services:
       context: .
       dockerfile: Dockerfile.api-v1
       args:
-        - NODE_OPTIONS=--max-old-space-size=2048
-        - BUILDKIT_STEP_LOG_MAX_SIZE=50000000
+        - NODE_OPTIONS=--max-old-space-size=4096
+        - BUILDKIT_STEP_LOG_MAX_SIZE=100000000
         - NEXT_PUBLIC_API_V2_ROOT_URL=http://api-v2:3004
     container_name: calcom-api-v1
     deploy:
       resources:
         limits:
-          memory: 4G
-          cpus: '2'
+          memory: 6G
+          cpus: '4'
         reservations:
-          memory: 1G
+          memory: 2G
           cpus: '1'
     environment:
       - NODE_ENV=production
@@ -190,16 +189,16 @@ services:
       context: .
       dockerfile: apps/api/v2/Dockerfile
       args:
-        - NODE_OPTIONS=--max-old-space-size=2048
-        - BUILDKIT_STEP_LOG_MAX_SIZE=50000000
+        - NODE_OPTIONS=--max-old-space-size=4096
+        - BUILDKIT_STEP_LOG_MAX_SIZE=100000000
     container_name: calcom-api-v2
     deploy:
       resources:
         limits:
-          memory: 4G
-          cpus: '2'
+          memory: 6G
+          cpus: '4'
         reservations:
-          memory: 1G
+          memory: 2G
           cpus: '1'
     environment:
       - NODE_ENV=development

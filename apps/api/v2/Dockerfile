@@ -9,7 +9,7 @@ RUN set -eux;
 RUN ln -s /usr/lib/libssl.so.3 /lib/libssl.so.3
 
 ENV NODE_ENV="production"
-ENV NODE_OPTIONS="--max-old-space-size=2048"
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 ENV TURBO_TELEMETRY_DISABLED=1
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DO_NOT_TRACK=1
@@ -19,22 +19,19 @@ ENV DATABASE_URL=${DATABASE_URL}
 COPY . .
 
 # Install dependencies with optimized yarn configuration
-# Disable automatic post-install scripts to prevent memory exhaustion
+# With 32GB RAM, we can use standard installation with higher memory limits
 RUN yarn config set httpTimeout 1800000 && \
     yarn config set enableGlobalCache false && \
     yarn config set enableTelemetry false && \
     yarn config set enableProgressBars false && \
     yarn config set logFilters --json '[{"code":"YN0002","level":"discard"},{"code":"YN0013","level":"discard"}]' && \
     yarn config set nmMode hardlinks-local && \
-    YARN_ENABLE_IMMUTABLE_INSTALLS=false SKIP_POSTINSTALL=1 yarn install --ignore-scripts
-
-# Run essential post-install scripts manually with memory constraints
-RUN NODE_OPTIONS="--max-old-space-size=1024" yarn run turbo run post-install --concurrency=1 || echo "Post-install completed with warnings"
+    YARN_ENABLE_IMMUTABLE_INSTALLS=false NODE_OPTIONS="--max-old-space-size=4096" yarn install --inline-builds
 
 # Build prisma schema and make sure that it is linked to v2 node_modules
 RUN yarn workspace @calcom/api-v2 run generate-schemas
 RUN rm -rf apps/api/v2/node_modules
-RUN SKIP_POSTINSTALL=1 yarn install --ignore-scripts
+RUN NODE_OPTIONS="--max-old-space-size=4096" yarn install --inline-builds
 
 RUN yarn workspace @calcom/api-v2 run build
 
