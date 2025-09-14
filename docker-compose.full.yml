@@ -132,7 +132,7 @@ services:
       - IS_CALCOM_DOCKER=true
       - SKIP_LICENSE_CHECK=true
     ports:
-      - "3001:3000"
+      - "3008:3001"
     depends_on:
       postgres:
         condition: service_healthy
