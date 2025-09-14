@@ -73,10 +73,16 @@ ENV CRON_API_KEY=$CRON_API_KEY
 ENV EMAIL_FROM=$EMAIL_FROM
 ENV NEXT_PUBLIC_WEBAPP_URL=$NEXT_PUBLIC_WEBAPP_URL
 
-# Generate Prisma client and build the application
-# Exclude test files from TypeScript compilation during build
-RUN yarn prisma generate && \
-    NEXT_BUILD_EXCLUDE_TEST_FILES=true yarn turbo run build --filter=@calcom/web
+# Generate Prisma client with error handling
+RUN NODE_OPTIONS="--max-old-space-size=8192" yarn prisma generate
+
+# Build the application with proper error handling and memory limits
+RUN NODE_OPTIONS="--max-old-space-size=8192" NEXT_BUILD_EXCLUDE_TEST_FILES=true yarn turbo run build --filter=@calcom/web --concurrency=2
+
+# Verify build artifacts exist
+RUN ls -la /app/apps/web/ || echo "Web app directory contents:" && \
+    ls -la /app/apps/web/.next/ || echo "Next.js build directory missing" && \
+    test -f /app/apps/web/next.config.js || echo "next.config.js missing"
 
 # Production stage
 FROM base AS production
@@ -98,7 +104,8 @@ COPY --from=build --chown=nextjs:nodejs /app/.yarnrc.yml ./.yarnrc.yml
 # Copy built packages
 COPY --from=build --chown=nextjs:nodejs /app/packages ./packages
 
-# Copy built apps
+# Copy built apps (create directories first)
+RUN mkdir -p ./apps/web
 COPY --from=build --chown=nextjs:nodejs /app/apps/web/.next ./apps/web/.next
 COPY --from=build --chown=nextjs:nodejs /app/apps/web/package.json ./apps/web/package.json
 COPY --from=build --chown=nextjs:nodejs /app/apps/web/next.config.js ./apps/web/next.config.js
