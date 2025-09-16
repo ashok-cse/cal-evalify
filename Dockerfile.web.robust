@@ -87,6 +87,8 @@ ENV DISABLE_LICENSE_CHECK=true
 ENV IS_CALCOM_DOCKER=true
 ENV SKIP_LICENSE_CHECK=true
 ENV ORGANIZATIONS_ENABLED=1
+ENV NEXT_PUBLIC_ORG_SELF_SERVE_ENABLED=1
+
 
 # Generate Prisma client with high memory allocation
 RUN NODE_OPTIONS="--max-old-space-size=8192" yarn prisma generate
