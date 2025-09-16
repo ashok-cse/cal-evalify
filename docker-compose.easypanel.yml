@@ -132,6 +132,7 @@ services:
     environment:
       - NODE_ENV=development
       - NODE_OPTIONS=--max-old-space-size=1024
+      - API_PORT=3004
       - DATABASE_URL=postgresql://${POSTGRES_USER:-unicorn_user}:${POSTGRES_PASSWORD:-magical_password}@postgres:5432/${POSTGRES_DB:-calendso}
       - DATABASE_DIRECT_URL=postgresql://${POSTGRES_USER:-unicorn_user}:${POSTGRES_PASSWORD:-magical_password}@postgres:5432/${POSTGRES_DB:-calendso}
       - DATABASE_READ_URL=postgresql://${POSTGRES_USER:-unicorn_user}:${POSTGRES_PASSWORD:-magical_password}@postgres:5432/${POSTGRES_DB:-calendso}

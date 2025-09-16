@@ -214,6 +214,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3004
+      - API_PORT=3004
       - HOST=0.0.0.0
       - DATABASE_URL=${DATABASE_URL}
       - DATABASE_DIRECT_URL=${DATABASE_DIRECT_URL}
