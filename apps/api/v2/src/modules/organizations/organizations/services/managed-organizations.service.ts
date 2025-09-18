@@ -81,10 +81,10 @@ export class ManagedOrganizationsService {
       authUser.username || defaultProfileUsername
     );
 
-    await this.managedOrganizationsBillingService.createManagedOrganizationBilling(
-      managerOrganizationId,
-      organization.id
-    );
+    // await this.managedOrganizationsBillingService.createManagedOrganizationBilling(
+    //   managerOrganizationId,
+    //   organization.id
+    // );
 
     const apiKey = await this.apiKeysService.createApiKey(authUser.id, {
       apiKeyDaysValid,
