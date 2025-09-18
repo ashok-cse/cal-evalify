@@ -35,43 +35,45 @@ export class PlatformPlanGuard implements CanActivate {
   }
 
   async checkPlatformPlanAccess(orgId: string, minimumPlan: PlatformPlanType) {
-    const REDIS_CACHE_KEY = `apiv2:org:${orgId}:guard:platformbilling:${minimumPlan}`;
-    const cachedValue = await this.redisService.redis.get(REDIS_CACHE_KEY);
-    if (cachedValue !== null) {
-      return cachedValue === "true";
-    }
+    console.log(orgId, minimumPlan);
+    
+    // const REDIS_CACHE_KEY = `apiv2:org:${orgId}:guard:platformbilling:${minimumPlan}`;
+    // const cachedValue = await this.redisService.redis.get(REDIS_CACHE_KEY);
+    // if (cachedValue !== null) {
+    //   return cachedValue === "true";
+    // }
 
-    const organization = await this.organizationsRepository.findByIdIncludeBilling(Number(orgId));
-    const isPlatform = organization?.isPlatform;
-    const hasSubscription = organization?.platformBilling?.subscriptionId;
+    // const organization = await this.organizationsRepository.findByIdIncludeBilling(Number(orgId));
+    // const isPlatform = organization?.isPlatform;
+    // const hasSubscription = organization?.platformBilling?.subscriptionId;
 
-    if (!organization) {
-      throw new ForbiddenException(`PlatformPlanGuard - No organization found with id=${orgId}.`);
-    }
-    if (!isPlatform) {
-      await this.redisService.redis.set(REDIS_CACHE_KEY, "true", "EX", 300);
-      return true;
-    }
-    if (!hasSubscription) {
-      throw new ForbiddenException(
-        `PlatformPlanGuard - No platform subscription found for organization with id=${orgId}.`
-      );
-    }
-    if (
-      !hasMinimumPlan({
-        currentPlan: organization.platformBilling?.plan as PlatformPlanType,
-        minimumPlan: minimumPlan,
-        plans: orderedPlans,
-      })
-    ) {
-      throw new ForbiddenException(
-        `PlatformPlanGuard - organization with id=${orgId} does not have required plan for this operation. Minimum plan is ${minimumPlan} while the organization has ${
-          organization.platformBilling?.plan || "undefined"
-        }.`
-      );
-    }
+    // if (!organization) {
+    //   throw new ForbiddenException(`PlatformPlanGuard - No organization found with id=${orgId}.`);
+    // }
+    // if (!isPlatform) {
+    //   await this.redisService.redis.set(REDIS_CACHE_KEY, "true", "EX", 300);
+    //   return true;
+    // }
+    // if (!hasSubscription) {
+    //   throw new ForbiddenException(
+    //     `PlatformPlanGuard - No platform subscription found for organization with id=${orgId}.`
+    //   );
+    // }
+    // if (
+    //   !hasMinimumPlan({
+    //     currentPlan: organization.platformBilling?.plan as PlatformPlanType,
+    //     minimumPlan: minimumPlan,
+    //     plans: orderedPlans,
+    //   })
+    // ) {
+    //   throw new ForbiddenException(
+    //     `PlatformPlanGuard - organization with id=${orgId} does not have required plan for this operation. Minimum plan is ${minimumPlan} while the organization has ${
+    //       organization.platformBilling?.plan || "undefined"
+    //     }.`
+    //   );
+    // }
 
-    await this.redisService.redis.set(REDIS_CACHE_KEY, "true", "EX", 300);
+    // await this.redisService.redis.set(REDIS_CACHE_KEY, "true", "EX", 300);
     return true;
   }
 }
